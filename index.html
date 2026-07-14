@@ -4,1087 +4,712 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1a1a1a">
-<title>Пастух</title>
+<title>Учёт выпаса скота</title>
 <style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
+  :root{
+    --bg:#1a1a1a;
+    --card:#2a2a2a;
+    --card-2:#333333;
+    --accent:#22c55e;
+    --accent-dark:#16a34a;
+    --danger:#ef4444;
+    --text:#f2f2f2;
+    --text-dim:#a3a3a3;
+    --border:#3a3a3a;
   }
-  html, body {
-    background: #1a1a1a;
-    color: #f5f5f5;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-size: 16px;
-    line-height: 1.5;
-    min-height: 100vh;
-    overscroll-behavior: none;
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+    padding-bottom:40px;
   }
-  body {
-    padding-bottom: env(safe-area-inset-bottom);
+  #app{max-width:640px;margin:0 auto;padding:0 14px;}
+
+  header.topbar{
+    display:flex;align-items:center;gap:10px;
+    padding:16px 4px 12px 4px;
+    position:sticky;top:0;background:var(--bg);z-index:20;
+    border-bottom:1px solid var(--border);
   }
-  button {
-    font-family: inherit;
-    cursor: pointer;
-    border: none;
-    outline: none;
+  header.topbar h1{
+    flex:1;font-size:18px;font-weight:700;margin:0;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  input, select {
-    font-family: inherit;
-    outline: none;
+  .status-pill{
+    display:flex;align-items:center;gap:6px;
+    font-size:12px;color:var(--text-dim);
+    background:var(--card);border:1px solid var(--border);
+    padding:5px 10px;border-radius:999px;white-space:nowrap;
+  }
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--danger);}
+  .status-dot.online{background:var(--accent);}
+  .icon-btn{
+    background:var(--card);border:1px solid var(--border);color:var(--text);
+    width:38px;height:38px;border-radius:10px;font-size:18px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    flex-shrink:0;
+  }
+  .icon-btn:active{background:var(--card-2);}
+
+  .banner{
+    background:#3a2e12;border:1px solid #7c5b12;color:#f5d78e;
+    padding:12px 14px;border-radius:12px;font-size:14px;margin:14px 0;
+    line-height:1.4;
+  }
+  .hidden{display:none !important;}
+
+  .summary-cards{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;
+  }
+  .summary-card{
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:12px 10px;text-align:center;
+  }
+  .summary-card .val{font-size:18px;font-weight:700;}
+  .summary-card .lbl{font-size:11px;color:var(--text-dim);margin-top:4px;}
+
+  .add-client-card{
+    background:var(--card);border:1px solid var(--border);border-radius:16px;
+    padding:16px;margin-bottom:18px;
+  }
+  .add-client-head{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
+  }
+  .add-client-head h2{margin:0;font-size:15px;color:var(--text-dim);font-weight:600;}
+  .link-btn{
+    background:transparent;border:none;color:var(--accent);font-size:13px;
+    font-weight:600;padding:4px 0;cursor:pointer;
+  }
+  #addClientForm{display:flex;gap:8px;flex-wrap:wrap;}
+  #addClientForm input{flex:1;min-width:110px;}
+  #addClientForm button{flex-shrink:0;}
+
+  input, select, textarea{
+    background:var(--card-2);border:1px solid var(--border);color:var(--text);
+    padding:11px 12px;border-radius:10px;font-size:15px;width:100%;
+    font-family:inherit;
+  }
+  input:focus, select:focus, textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  textarea{resize:vertical;min-height:140px;line-height:1.5;}
+
+  button{
+    font-family:inherit;font-size:14px;font-weight:600;
+    border-radius:10px;border:1px solid var(--border);
+    padding:11px 16px;cursor:pointer;background:var(--card-2);color:var(--text);
+  }
+  button.primary{background:var(--accent);border-color:var(--accent-dark);color:#0a1f10;}
+  button.primary:active{background:var(--accent-dark);}
+  button.ghost{background:transparent;}
+  button.danger-ghost{background:transparent;color:var(--danger);border-color:#5a2323;}
+
+  .clients-empty{
+    color:var(--text-dim);text-align:center;padding:30px 10px;font-size:14px;
   }
 
-  /* Header */
-  .header {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: linear-gradient(180deg, #1a1a1a 0%, rgba(26,26,26,0.95) 100%);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid #2a2a2a;
+  .client-card{
+    background:var(--card);border:1px solid var(--border);border-radius:16px;
+    padding:14px 16px;margin-bottom:10px;
   }
-  .header-title {
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-    color: #ffffff;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 70%;
-  }
-  .header-subtitle {
-    font-size: 12px;
-    color: #888;
-    margin-top: 2px;
-  }
-  .icon-btn {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: #2a2a2a;
-    color: #f5f5f5;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s, transform 0.1s;
-  }
-  .icon-btn:active {
-    background: #333;
-    transform: scale(0.95);
-  }
-  .icon-btn svg {
-    width: 22px;
-    height: 22px;
+  .client-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .client-name{font-size:16px;font-weight:700;}
+  .client-heads{font-size:12.5px;color:var(--text-dim);margin-top:2px;}
+  .client-debt{font-size:20px;font-weight:800;margin-top:10px;}
+  .client-debt.zero{color:var(--accent);}
+  .client-actions{display:flex;gap:8px;margin-top:12px;}
+  .client-actions button{flex:1;}
+  .paid-badge{
+    font-size:11px;background:#123a22;color:var(--accent);
+    padding:3px 8px;border-radius:999px;border:1px solid var(--accent-dark);
   }
 
-  /* Main */
-  .main {
-    padding: 16px 16px 100px 16px;
-    max-width: 720px;
-    margin: 0 auto;
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.6);
+    display:flex;align-items:flex-end;justify-content:center;z-index:100;
   }
-
-  /* Summary cards */
-  .summary {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
+  @media(min-width:520px){
+    .modal-overlay{align-items:center;}
   }
-  .summary-card {
-    background: #2a2a2a;
-    border-radius: 16px;
-    padding: 16px;
-    border: 1px solid #333;
+  .modal{
+    background:var(--card);border:1px solid var(--border);
+    border-radius:18px 18px 0 0;padding:20px;width:100%;max-width:460px;
+    max-height:88vh;overflow-y:auto;
   }
-  .summary-label {
-    font-size: 12px;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
+  @media(min-width:520px){
+    .modal{border-radius:18px;}
   }
-  .summary-value {
-    font-size: 22px;
-    font-weight: 700;
-    color: #fff;
-  }
-  .summary-value.accent {
-    color: #22c55e;
-  }
-
-  /* Warning */
-  .warning {
-    background: linear-gradient(135deg, #7c2d12 0%, #431407 100%);
-    border: 1px solid #9a3412;
-    color: #fed7aa;
-    padding: 14px 16px;
-    border-radius: 14px;
-    margin-bottom: 16px;
-    font-size: 14px;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .warning-icon {
-    flex-shrink: 0;
-    width: 20px;
-    height: 20px;
-    margin-top: 1px;
-  }
-
-  /* Client list */
-  .section-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #aaa;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    margin: 20px 4px 12px 4px;
-  }
-  .clients-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .client-card {
-    background: #2a2a2a;
-    border-radius: 16px;
-    padding: 14px 16px;
-    border: 1px solid #333;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transition: transform 0.15s;
-  }
-  .client-card:active {
-    transform: scale(0.99);
-  }
-  .avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 16px;
-    flex-shrink: 0;
-  }
-  .client-info {
-    flex: 1;
-    min-width: 0;
-  }
-  .client-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: #fff;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .client-meta {
-    font-size: 13px;
-    color: #888;
-    margin-top: 2px;
-  }
-  .client-amount {
-    font-size: 15px;
-    font-weight: 700;
-    color: #fff;
-    text-align: right;
-    white-space: nowrap;
-  }
-  .client-amount.paid {
-    color: #22c55e;
-  }
-  .pay-btn {
-    background: #22c55e;
-    color: #fff;
-    padding: 8px 14px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    margin-top: 6px;
-    transition: background 0.2s, transform 0.1s;
-  }
-  .pay-btn:active {
-    background: #16a34a;
-    transform: scale(0.95);
-  }
-  .pay-btn:disabled {
-    background: #3a3a3a;
-    color: #777;
-    cursor: not-allowed;
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: #666;
-  }
-  .empty-state-icon {
-    font-size: 48px;
-    margin-bottom: 12px;
-    opacity: 0.5;
-  }
-  .empty-state-text {
-    font-size: 15px;
-  }
-
-  /* FAB */
-  .fab {
-    position: fixed;
-    bottom: 24px;
-    right: 20px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: #22c55e;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8px 24px rgba(34, 197, 94, 0.4);
-    z-index: 40;
-    transition: transform 0.15s;
-  }
-  .fab:active {
-    transform: scale(0.92);
-  }
-  .fab svg {
-    width: 28px;
-    height: 28px;
-  }
-
-  /* Modal */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: 100;
-    display: none;
-    align-items: flex-end;
-    justify-content: center;
-    animation: fadeIn 0.2s ease;
-  }
-  .modal-overlay.active {
-    display: flex;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  @keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-  }
-  .modal {
-    background: #222;
-    width: 100%;
-    max-width: 520px;
-    max-height: 92vh;
-    border-radius: 24px 24px 0 0;
-    padding: 20px 20px calc(20px + env(safe-area-inset-bottom)) 20px;
-    overflow-y: auto;
-    animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-  @media (min-width: 600px) {
-    .modal {
-      border-radius: 24px;
-      margin-bottom: 20px;
-      max-height: 85vh;
-    }
-  }
-  .modal-handle {
-    width: 40px;
-    height: 4px;
-    background: #444;
-    border-radius: 2px;
-    margin: 0 auto 16px auto;
-  }
-  .modal-title {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 20px;
-    color: #fff;
-  }
-  .form-group {
-    margin-bottom: 16px;
-  }
-  .form-label {
-    display: block;
-    font-size: 13px;
-    color: #aaa;
-    margin-bottom: 6px;
-    font-weight: 500;
-  }
-  .form-input, .form-select {
-    width: 100%;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    color: #fff;
-    padding: 13px 14px;
-    border-radius: 12px;
-    font-size: 15px;
-    transition: border-color 0.2s;
-  }
-  .form-input:focus, .form-select:focus {
-    border-color: #22c55e;
-  }
-  .form-input::placeholder {
-    color: #555;
-  }
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-  .modal-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 24px;
-  }
-  .btn {
-    flex: 1;
-    padding: 14px;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 600;
-    transition: transform 0.1s, opacity 0.2s;
-  }
-  .btn:active {
-    transform: scale(0.98);
-  }
-  .btn-primary {
-    background: #22c55e;
-    color: #fff;
-  }
-  .btn-primary:active {
-    background: #16a34a;
-  }
-  .btn-secondary {
-    background: #333;
-    color: #fff;
-  }
-  .btn-danger {
-    background: #7f1d1d;
-    color: #fecaca;
-  }
-
-  /* Sync indicator */
-  .sync-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    background: #2a2a2a;
-    color: #888;
-    margin-left: 8px;
-  }
-  .sync-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #888;
-  }
-  .sync-badge.online .sync-dot {
-    background: #22c55e;
-    box-shadow: 0 0 8px #22c55e;
-  }
-  .sync-badge.pending .sync-dot {
-    background: #f59e0b;
-    animation: pulse 1.5s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-
-  /* Toast */
-  .toast {
-    position: fixed;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: #fff;
-    padding: 12px 20px;
-    border-radius: 12px;
-    font-size: 14px;
-    z-index: 200;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s, transform 0.3s;
-  }
-  .toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(-10px);
-  }
-  .toast.success {
-    background: #166534;
-    border: 1px solid #22c55e;
-  }
-  .toast.error {
-    background: #7f1d1d;
-    border: 1px solid #ef4444;
-  }
+  .modal h2{margin:0 0 16px 0;font-size:18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:6px;font-weight:600;}
+  .lang-switch{display:flex;gap:8px;}
+  .lang-switch button{flex:1;padding:9px 6px;font-size:13px;}
+  .lang-switch button.active{background:var(--accent);color:#0a1f10;border-color:var(--accent-dark);}
+  .modal-actions{display:flex;gap:10px;margin-top:18px;}
+  .modal-actions button{flex:1;}
+  .hint-text{font-size:12px;color:var(--text-dim);margin:-6px 0 14px 0;line-height:1.5;}
+  .import-result{font-size:13px;margin-top:10px;line-height:1.5;}
+  .import-result.ok{color:var(--accent);}
+  .import-result.err{color:var(--danger);}
 </style>
 </head>
 <body>
+<div id="app">
 
-<header class="header">
-  <div>
-    <div class="header-title" id="headerTitle">Пастух</div>
-    <div class="header-subtitle" id="headerSubtitle">
-      <span id="statusText">Учёт выпаса скота</span>
-      <span class="sync-badge" id="syncBadge">
-        <span class="sync-dot"></span>
-        <span id="syncLabel">—</span>
-      </span>
+  <header class="topbar">
+    <h1 id="farmTitle">—</h1>
+    <div class="status-pill" id="statusPill">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText"></span>
     </div>
-  </div>
-  <button class="icon-btn" id="settingsBtn" aria-label="Settings">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="3"></circle>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-    </svg>
-  </button>
-</header>
+    <button class="icon-btn" id="gearBtn" aria-label="Settings">⚙</button>
+  </header>
 
-<main class="main">
-  <div id="warningBox" class="warning" style="display:none;">
-    <svg class="warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-      <line x1="12" y1="9" x2="12" y2="13"></line>
-      <line x1="12" y1="17" x2="12.01" y2="17"></line>
-    </svg>
-    <span id="warningText"></span>
-  </div>
+  <main>
+    <div class="banner hidden" id="warningBanner"></div>
 
-  <div class="summary">
-    <div class="summary-card">
-      <div class="summary-label" id="lblClients">Клиенты</div>
-      <div class="summary-value" id="sumClients">0</div>
-    </div>
-    <div class="summary-card">
-      <div class="summary-label" id="lblHeads">Всего голов</div>
-      <div class="summary-value" id="sumHeads">0</div>
-    </div>
-    <div class="summary-card">
-      <div class="summary-label" id="lblDebt">Общий долг</div>
-      <div class="summary-value accent" id="sumDebt">0</div>
-    </div>
-    <div class="summary-card">
-      <div class="summary-label" id="lblPaid">Оплачено</div>
-      <div class="summary-value" id="sumPaid">0</div>
-    </div>
-  </div>
+    <section class="summary-cards" id="summaryCards"></section>
 
-  <div class="section-title" id="lblList">Список клиентов</div>
-  <div id="clientsList" class="clients-list"></div>
-</main>
+    <section class="add-client-card">
+      <div class="add-client-head">
+        <h2 data-i18n="addClient"></h2>
+        <button type="button" class="link-btn" id="openImportBtn" data-i18n="importOpen"></button>
+      </div>
+      <form id="addClientForm">
+        <input id="newClientName" type="text" required>
+        <input id="newClientHeads" type="number" min="1" step="1" required>
+        <button type="submit" class="primary" data-i18n="add"></button>
+      </form>
+    </section>
 
-<button class="fab" id="addBtn" aria-label="Add">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="12" y1="5" x2="12" y2="19"></line>
-    <line x1="5" y1="12" x2="19" y2="12"></line>
-  </svg>
-</button>
+    <section id="clientsList"></section>
+  </main>
+</div>
 
-<!-- Settings Modal -->
-<div class="modal-overlay" id="settingsModal">
+<div class="modal-overlay hidden" id="settingsModal">
   <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="settingsTitle">Настройки</div>
+    <h2 data-i18n="settings"></h2>
 
-    <div class="form-group">
-      <label class="form-label" id="lblLang">Язык интерфейса</label>
-      <select class="form-select" id="setLang">
-        <option value="ru">Русский</option>
-        <option value="kk">Қазақша</option>
-        <option value="en">English</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label" id="lblFarm">Название хозяйства / аула</label>
-      <input type="text" class="form-input" id="setFarm" placeholder="Например: Аул «Көкжайлау»">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label" id="lblUrl">URL Google Web App (скрипт таблицы)</label>
-      <input type="url" class="form-input" id="setUrl" placeholder="https://script.google.com/macros/s/...">
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label" id="lblTariff">Тариф за 1 голову</label>
-        <input type="number" class="form-input" id="setTariff" placeholder="1000" min="0" step="any">
+    <div class="field">
+      <label data-i18n="language"></label>
+      <div class="lang-switch" id="langSwitch">
+        <button type="button" data-lang-opt="ru">Русский</button>
+        <button type="button" data-lang-opt="kk">Қазақша</button>
+        <button type="button" data-lang-opt="en">English</button>
       </div>
-      <div class="form-group">
-        <label class="form-label" id="lblCurrency">Валюта</label>
-        <select class="form-select" id="setCurrency">
-          <option value="₸">₸ (Тенге)</option>
-          <option value="₽">₽ (Рубль)</option>
-          <option value="$">$ (Доллар)</option>
-          <option value="сом">сом (Кыргызсом)</option>
-        </select>
-      </div>
+    </div>
+
+    <div class="field">
+      <label data-i18n="farmName"></label>
+      <input id="settingFarmName" type="text">
+    </div>
+
+    <div class="field">
+      <label data-i18n="sheetUrl"></label>
+      <input id="settingSheetUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+
+    <div class="field">
+      <label data-i18n="tariff"></label>
+      <input id="settingTariff" type="number" min="0" step="0.01">
+    </div>
+
+    <div class="field">
+      <label data-i18n="currency"></label>
+      <input id="settingCurrency" type="text" list="currencyList" maxlength="6">
+      <datalist id="currencyList">
+        <option value="₸"></option>
+        <option value="₽"></option>
+        <option value="$"></option>
+        <option value="сом"></option>
+      </datalist>
     </div>
 
     <div class="modal-actions">
-      <button class="btn btn-secondary" id="settingsCancel">Отмена</button>
-      <button class="btn btn-primary" id="settingsSave">Сохранить</button>
+      <button type="button" class="ghost" id="settingsCancel" data-i18n="cancel"></button>
+      <button type="button" class="primary" id="settingsSave" data-i18n="save"></button>
     </div>
   </div>
 </div>
 
-<!-- Add Client Modal -->
-<div class="modal-overlay" id="addModal">
+<div class="modal-overlay hidden" id="importModal">
   <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="addTitle">Новый клиент</div>
-
-    <div class="form-group">
-      <label class="form-label" id="lblName">ФИО клиента</label>
-      <input type="text" class="form-input" id="addName" placeholder="Иванов Иван">
+    <h2 data-i18n="importTitle"></h2>
+    <p class="hint-text" data-i18n="importHint"></p>
+    <div class="field">
+      <textarea id="importText" placeholder="Иван Петров, 5&#10;Асан Серіков, 3&#10;Гуля К., 2"></textarea>
     </div>
-
-    <div class="form-group">
-      <label class="form-label" id="lblHeadsInput">Количество голов</label>
-      <input type="number" class="form-input" id="addHeads" placeholder="10" min="1" step="1">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label" id="lblNote">Заметка (необязательно)</label>
-      <input type="text" class="form-input" id="addNote" placeholder="Овец, летние пастбища">
-    </div>
-
+    <div id="importResult" class="import-result hidden"></div>
     <div class="modal-actions">
-      <button class="btn btn-secondary" id="addCancel">Отмена</button>
-      <button class="btn btn-primary" id="addSave">Добавить</button>
+      <button type="button" class="ghost" id="importCancel" data-i18n="cancel"></button>
+      <button type="button" class="primary" id="importConfirm" data-i18n="importConfirm"></button>
     </div>
   </div>
 </div>
-
-<div class="toast" id="toast"></div>
 
 <script>
-/* ============================================================
-   ПЕРЕВОДЫ
-   ============================================================ */
-const I18N = {
-  ru: {
-    appTitle: "Пастух",
-    subtitle: "Учёт выпаса скота",
-    settings: "Настройки",
-    lang: "Язык интерфейса",
-    farm: "Название хозяйства / аула",
-    url: "URL Google Web App (скрипт таблицы)",
-    tariff: "Тариф за 1 голову",
-    currency: "Валюта",
-    save: "Сохранить",
-    cancel: "Отмена",
-    addClient: "Новый клиент",
-    name: "ФИО клиента",
-    heads: "Количество голов",
-    note: "Заметка (необязательно)",
-    add: "Добавить",
-    pay: "Оплатить",
-    paid: "Оплачено",
-    clients: "Клиенты",
-    totalHeads: "Всего голов",
-    totalDebt: "Общий долг",
-    totalPaid: "Оплачено",
-    list: "Список клиентов",
-    empty: "Пока нет клиентов. Нажмите «+», чтобы добавить первого.",
-    warningNoUrl: "Пожалуйста, зайдите в настройки (шестерёнка) и подключите вашу Google-таблицу.",
-    headsShort: "гол.",
-    saved: "Настройки сохранены",
-    clientAdded: "Клиент добавлен",
-    paymentSent: "Платёж отправлен",
-    paymentQueued: "Платёж сохранён. Отправится при появлении сети.",
-    online: "онлайн",
-    offline: "оффлайн",
-    pending: "ожидает",
-    fillName: "Введите имя клиента",
-    fillHeads: "Введите количество голов",
-    delete: "Удалить",
-    deleteConfirm: "Удалить клиента?",
-    settingsReset: "Сбросить все данные?"
-  },
-  kk: {
-    appTitle: "Бақташы",
-    subtitle: "Мал жаю есебі",
-    settings: "Баптаулар",
-    lang: "Интерфейс тілі",
-    farm: "Шаруашылық / ауыл атауы",
-    url: "Google Web App URL (кесте скрипті)",
-    tariff: "1 бас малға тариф",
-    currency: "Валюта",
-    save: "Сақтау",
-    cancel: "Болдырмау",
-    addClient: "Жаңа клиент",
-    name: "Клиенттің аты-жөні",
-    heads: "Бас саны",
-    note: "Ескертпе (міндетті емес)",
-    add: "Қосу",
-    pay: "Төлеу",
-    paid: "Төленді",
-    clients: "Клиенттер",
-    totalHeads: "Барлық бас",
-    totalDebt: "Жалпы қарыз",
-    totalPaid: "Төленді",
-    list: "Клиенттер тізімі",
-    empty: "Клиенттер жоқ. «+» батырмасын басыңыз.",
-    warningNoUrl: "Баптауларға кіріп (шестерня), Google кестеңізді қосыңыз.",
-    headsShort: "бас",
-    saved: "Баптаулар сақталды",
-    clientAdded: "Клиент қосылды",
-    paymentSent: "Төлем жіберілді",
-    paymentQueued: "Төлем сақталды. Желі пайда болғанда жіберіледі.",
-    online: "онлайн",
-    offline: "оффлайн",
-    pending: "күтуде",
-    fillName: "Клиенттің атын енгізіңіз",
-    fillHeads: "Бас санын енгізіңіз",
-    delete: "Жою",
-    deleteConfirm: "Клиентті жою керек пе?",
-    settingsReset: "Барлық деректерді қалпына келтіру керек пе?"
-  },
-  en: {
-    appTitle: "Shepherd",
-    subtitle: "Livestock grazing accounting",
-    settings: "Settings",
-    lang: "Interface language",
-    farm: "Farm / village name",
-    url: "Google Web App URL (sheet script)",
-    tariff: "Rate per 1 head",
-    currency: "Currency",
-    save: "Save",
-    cancel: "Cancel",
-    addClient: "New client",
-    name: "Client name",
-    heads: "Number of heads",
-    note: "Note (optional)",
-    add: "Add",
-    pay: "Pay",
-    paid: "Paid",
-    clients: "Clients",
-    totalHeads: "Total heads",
-    totalDebt: "Total debt",
-    totalPaid: "Paid",
-    list: "Client list",
-    empty: "No clients yet. Tap «+» to add the first one.",
-    warningNoUrl: "Please open Settings (gear icon) and connect your Google Sheet.",
-    headsShort: "head(s)",
-    saved: "Settings saved",
-    clientAdded: "Client added",
-    paymentSent: "Payment sent",
-    paymentQueued: "Payment saved. Will be sent when online.",
-    online: "online",
-    offline: "offline",
-    pending: "pending",
-    fillName: "Enter client name",
-    fillHeads: "Enter number of heads",
-    delete: "Delete",
-    deleteConfirm: "Delete this client?",
-    settingsReset: "Reset all data?"
-  }
-};
+(function(){
+  "use strict";
 
-/* ============================================================
-   СОСТОЯНИЕ И LOCALSTORAGE
-   ============================================================ */
-const STORAGE_KEYS = {
-  settings: "pst_settings_v1",
-  clients: "pst_clients_v1",
-  pending: "pst_pending_v1"
-};
-
-const DEFAULT_SETTINGS = {
-  lang: "ru",
-  farm: "",
-  url: "",
-  tariff: 0,
-  currency: "₸"
-};
-
-let state = {
-  settings: loadJSON(STORAGE_KEYS.settings, DEFAULT_SETTINGS),
-  clients: loadJSON(STORAGE_KEYS.clients, []),
-  pending: loadJSON(STORAGE_KEYS.pending, []),
-  isOnline: navigator.onLine
-};
-
-function loadJSON(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw);
-  } catch (e) {
-    return fallback;
-  }
-}
-function saveJSON(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
-}
-function t(key) {
-  const lang = state.settings.lang || "ru";
-  return (I18N[lang] && I18N[lang][key]) || I18N.ru[key] || key;
-}
-
-/* ============================================================
-   ПРИМЕНЕНИЕ НАСТРОЕК К UI
-   ============================================================ */
-function applyI18N() {
-  document.documentElement.lang = state.settings.lang || "ru";
-
-  const farmName = (state.settings.farm || "").trim();
-  document.getElementById("headerTitle").textContent = farmName || t("appTitle");
-  document.getElementById("statusText").textContent = t("subtitle");
-
-  document.getElementById("settingsTitle").textContent = t("settings");
-  document.getElementById("lblLang").textContent = t("lang");
-  document.getElementById("lblFarm").textContent = t("farm");
-  document.getElementById("lblUrl").textContent = t("url");
-  document.getElementById("lblTariff").textContent = t("tariff");
-  document.getElementById("lblCurrency").textContent = t("currency");
-  document.getElementById("settingsSave").textContent = t("save");
-  document.getElementById("settingsCancel").textContent = t("cancel");
-
-  document.getElementById("addTitle").textContent = t("addClient");
-  document.getElementById("lblName").textContent = t("name");
-  document.getElementById("lblHeadsInput").textContent = t("heads");
-  document.getElementById("lblNote").textContent = t("note");
-  document.getElementById("addSave").textContent = t("add");
-  document.getElementById("addCancel").textContent = t("cancel");
-
-  document.getElementById("lblClients").textContent = t("clients");
-  document.getElementById("lblHeads").textContent = t("totalHeads");
-  document.getElementById("lblDebt").textContent = t("totalDebt");
-  document.getElementById("lblPaid").textContent = t("totalPaid");
-  document.getElementById("lblList").textContent = t("list");
-}
-
-function formatMoney(n) {
-  const c = state.settings.currency || "₸";
-  const num = Number(n || 0);
-  const rounded = Math.round(num * 100) / 100;
-  const formatted = rounded.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
-  return `${formatted} ${c}`;
-}
-
-function renderAll() {
-  applyI18N();
-  renderWarning();
-  renderSummary();
-  renderClients();
-  renderSyncStatus();
-}
-
-function renderWarning() {
-  const box = document.getElementById("warningBox");
-  const url = (state.settings.url || "").trim();
-  if (!url) {
-    document.getElementById("warningText").textContent = t("warningNoUrl");
-    box.style.display = "flex";
-  } else {
-    box.style.display = "none";
-  }
-}
-
-function renderSummary() {
-  const clients = state.clients;
-  const tariff = Number(state.settings.tariff || 0);
-  let totalHeads = 0;
-  let totalDebt = 0;
-  let totalPaid = 0;
-
-  clients.forEach(c => {
-    const heads = Number(c.heads || 0);
-    totalHeads += heads;
-    const debt = heads * tariff;
-    const paid = Number(c.paid || 0);
-    totalDebt += debt;
-    totalPaid += paid;
-  });
-
-  document.getElementById("sumClients").textContent = clients.length;
-  document.getElementById("sumHeads").textContent = totalHeads;
-  document.getElementById("sumDebt").textContent = formatMoney(totalDebt);
-  document.getElementById("sumPaid").textContent = formatMoney(totalPaid);
-}
-
-function getInitials(name) {
-  const parts = String(name || "").trim().split(/\s+/);
-  if (!parts[0]) return "?";
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
-}
-
-function renderClients() {
-  const list = document.getElementById("clientsList");
-  const clients = state.clients;
-  const tariff = Number(state.settings.tariff || 0);
-
-  if (clients.length === 0) {
-    list.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state-icon">🐄</div>
-        <div class="empty-state-text">${t("empty")}</div>
-      </div>
-    `;
-    return;
-  }
-
-  list.innerHTML = "";
-  clients.forEach(c => {
-    const heads = Number(c.heads || 0);
-    const debt = heads * tariff;
-    const paid = Number(c.paid || 0);
-    const remaining = Math.max(0, debt - paid);
-    const isPaid = remaining <= 0 && debt > 0;
-
-    const card = document.createElement("div");
-    card.className = "client-card";
-    card.innerHTML = `
-      <div class="avatar">${getInitials(c.name)}</div>
-      <div class="client-info">
-        <div class="client-name">${escapeHtml(c.name)}</div>
-        <div class="client-meta">${heads} ${t("headsShort")}${c.note ? " • " + escapeHtml(c.note) : ""}</div>
-        ${debt > 0 ? `<button class="pay-btn" data-id="${c.id}" ${isPaid ? "disabled" : ""}>${isPaid ? t("paid") : t("pay")}</button>` : ""}
-      </div>
-      <div class="client-amount ${isPaid ? "paid" : ""}">
-        ${debt > 0 ? formatMoney(remaining) : "—"}
-      </div>
-    `;
-    list.appendChild(card);
-  });
-
-  list.querySelectorAll(".pay-btn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const id = btn.getAttribute("data-id");
-      payClient(id);
-    });
-  });
-}
-
-function escapeHtml(str) {
-  return String(str || "").replace(/[&<>"']/g, ch => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-  }[ch]));
-}
-
-function renderSyncStatus() {
-  const badge = document.getElementById("syncBadge");
-  const label = document.getElementById("syncLabel");
-  badge.classList.remove("online", "offline", "pending");
-
-  if (state.pending.length > 0) {
-    badge.classList.add("pending");
-    label.textContent = `${t("pending")} · ${state.pending.length}`;
-  } else if (state.isOnline) {
-    badge.classList.add("online");
-    label.textContent = t("online");
-  } else {
-    label.textContent = t("offline");
-  }
-}
-
-/* ============================================================
-   ДЕЙСТВИЯ
-   ============================================================ */
-function addClient(name, heads, note) {
-  const client = {
-    id: "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
-    name: String(name || "").trim(),
-    heads: Number(heads || 0),
-    note: String(note || "").trim(),
-    paid: 0,
-    createdAt: Date.now()
+  var STORAGE_KEYS = {
+    settings: "livestock_app_settings",
+    clients: "livestock_app_clients",
+    pending: "livestock_app_pending"
   };
-  state.clients.push(client);
-  saveJSON(STORAGE_KEYS.clients, state.clients);
-  enqueueSync({ action: "add_client", client });
-  renderAll();
-  showToast(t("clientAdded"), "success");
-}
 
-function payClient(id) {
-  const client = state.clients.find(c => c.id === id);
-  if (!client) return;
+  var I18N = {
+    ru: {
+      settings:"Настройки", language:"Язык интерфейса", farmName:"Название хозяйства / аула",
+      sheetUrl:"Ссылка на Google-таблицу (Web App)", tariff:"Тариф за 1 голову скота",
+      currency:"Валюта", save:"Сохранить", cancel:"Отмена",
+      addClient:"Добавить хозяина скота", add:"Добавить",
+      namePlaceholder:"Имя владельца", headsPlaceholder:"Кол-во голов",
+      headsLabel:"голов", debtLabel:"Долг", payInFull:"Оплатить полностью",
+      delete:"Удалить", paidStatus:"Оплачено",
+      noClients:"Пока никого нет. Добавьте первого владельца скота выше.",
+      warnNoUrl:"Пожалуйста, зайдите в настройки (шестерёнка) и подключите вашу таблицу.",
+      online:"Онлайн", offline:"Офлайн", syncSuffix:"в очереди",
+      totalClients:"Хозяев", totalHeads:"Голов скота", totalDebt:"Общий долг",
+      defaultFarmTitle:"Учёт выпаса скота",
+      confirmDelete:"Удалить этого владельца из списка?",
+      importOpen:"Импорт списка",
+      importTitle:"Импорт списка владельцев",
+      importHint:"Вставьте список, по одному владельцу на строку, в формате: Имя, количество голов. Разделитель — запятая, точка с запятой или табуляция.",
+      importConfirm:"Импортировать",
+      importOkPrefix:"Добавлено:",
+      importErrPrefix:"Не распознано строк:"
+    },
+    kk: {
+      settings:"Баптаулар", language:"Интерфейс тілі", farmName:"Шаруашылық / ауыл атауы",
+      sheetUrl:"Google кестесіне сілтеме (Web App)", tariff:"1 бас мал үшін тариф",
+      currency:"Валюта", save:"Сақтау", cancel:"Бас тарту",
+      addClient:"Мал иесін қосу", add:"Қосу",
+      namePlaceholder:"Иесінің аты", headsPlaceholder:"Бас саны",
+      headsLabel:"бас", debtLabel:"Борыш", payInFull:"Толық төлеу",
+      delete:"Жою", paidStatus:"Төленген",
+      noClients:"Әзірге ешкім жоқ. Жоғарыда алғашқы мал иесін қосыңыз.",
+      warnNoUrl:"Баптауларға (тісті дөңгелек) кіріп, кестеңізді қосыңыз.",
+      online:"Онлайн", offline:"Офлайн", syncSuffix:"кезекте",
+      totalClients:"Иелер", totalHeads:"Бас мал", totalDebt:"Жалпы борыш",
+      defaultFarmTitle:"Мал жаю есебі",
+      confirmDelete:"Бұл иесін тізімнен жоюды қалайсыз ба?",
+      importOpen:"Тізімді импорттау",
+      importTitle:"Иелер тізімін импорттау",
+      importHint:"Әр иесін жаңа жолға былай енгізіңіз: Аты, бас саны. Бөлгіш — үтір, нүктелі үтір немесе табуляция.",
+      importConfirm:"Импорттау",
+      importOkPrefix:"Қосылды:",
+      importErrPrefix:"Танылмаған жолдар:"
+    },
+    en: {
+      settings:"Settings", language:"Interface language", farmName:"Farm / village name",
+      sheetUrl:"Google Sheet link (Web App)", tariff:"Rate per 1 head",
+      currency:"Currency", save:"Save", cancel:"Cancel",
+      addClient:"Add livestock owner", add:"Add",
+      namePlaceholder:"Owner name", headsPlaceholder:"Number of head",
+      headsLabel:"head", debtLabel:"Debt", payInFull:"Pay in full",
+      delete:"Delete", paidStatus:"Paid",
+      noClients:"No one here yet. Add the first owner above.",
+      warnNoUrl:"Please open settings (gear icon) and connect your spreadsheet.",
+      online:"Online", offline:"Offline", syncSuffix:"pending",
+      totalClients:"Owners", totalHeads:"Head of stock", totalDebt:"Total debt",
+      defaultFarmTitle:"Grazing Ledger",
+      confirmDelete:"Remove this owner from the list?",
+      importOpen:"Import list",
+      importTitle:"Import list of owners",
+      importHint:"Paste one owner per line, formatted as: Name, number of head. Separator can be a comma, semicolon, or tab.",
+      importConfirm:"Import",
+      importOkPrefix:"Added:",
+      importErrPrefix:"Unrecognized lines:"
+    }
+  };
 
-  const tariff = Number(state.settings.tariff || 0);
-  const debt = Number(client.heads || 0) * tariff;
-  const toPay = Math.max(0, debt - Number(client.paid || 0));
-  if (toPay <= 0) return;
+  function defaultSettings(){
+    return { lang:"ru", farmName:"", sheetUrl:"", tariff:0, currency:"₸" };
+  }
 
-  client.paid = (Number(client.paid || 0) + toPay);
-  saveJSON(STORAGE_KEYS.clients, state.clients);
+  function loadJSON(key, fallback){
+    try{
+      var raw = localStorage.getItem(key);
+      if(!raw) return fallback;
+      var parsed = JSON.parse(raw);
+      return parsed === null || parsed === undefined ? fallback : parsed;
+    }catch(e){
+      return fallback;
+    }
+  }
 
-  enqueueSync({
-    action: "pay",
-    clientId: client.id,
-    amount: toPay,
-    paidAt: Date.now()
-  });
+  var state = {
+    settings: Object.assign(defaultSettings(), loadJSON(STORAGE_KEYS.settings, {})),
+    clients: loadJSON(STORAGE_KEYS.clients, []),
+    pending: loadJSON(STORAGE_KEYS.pending, []),
+    online: navigator.onLine
+  };
 
-  renderAll();
-  showToast(t("paymentSent"), "success");
-}
+  function saveSettings(){ localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(state.settings)); }
+  function saveClients(){ localStorage.setItem(STORAGE_KEYS.clients, JSON.stringify(state.clients)); }
+  function savePending(){ localStorage.setItem(STORAGE_KEYS.pending, JSON.stringify(state.pending)); }
 
-function enqueueSync(entry) {
-  if (!entry) return;
-  state.pending.push(entry);
-  saveJSON(STORAGE_KEYS.pending, state.pending);
-  renderSyncStatus();
-  trySync();
-}
+  function t(key){
+    var dict = I18N[state.settings.lang] || I18N.ru;
+    return dict[key] !== undefined ? dict[key] : key;
+  }
 
-async function trySync() {
-  if (!state.isOnline) return;
-  if (state.pending.length === 0) return;
-  const url = (state.settings.url || "").trim();
-  if (!url) return;
+  function uid(){
+    return "c" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  }
 
-  const batch = state.pending.slice();
-  try {
-    const res = await fetch(url, {
+  function formatMoney(n){
+    var val = Math.round((Number(n) || 0) * 100) / 100;
+    return val.toLocaleString("ru-RU") + " " + (state.settings.currency || "");
+  }
+
+  function computeDebt(client){
+    var tariff = Number(state.settings.tariff) || 0;
+    var total = (Number(client.heads) || 0) * tariff;
+    var owed = total - (Number(client.paidTotal) || 0);
+    if(owed < 0) owed = 0;
+    return { total: total, owed: owed };
+  }
+
+  // ---------- rendering ----------
+
+  function applyStaticTranslations(){
+    document.querySelectorAll("[data-i18n]").forEach(function(el){
+      el.textContent = t(el.getAttribute("data-i18n"));
+    });
+    document.getElementById("newClientName").placeholder = t("namePlaceholder");
+    document.getElementById("newClientHeads").placeholder = t("headsPlaceholder");
+    document.querySelectorAll("#langSwitch button").forEach(function(btn){
+      btn.classList.toggle("active", btn.getAttribute("data-lang-opt") === state.settings.lang);
+    });
+  }
+
+  function renderHeader(){
+    document.getElementById("farmTitle").textContent = state.settings.farmName
+      ? state.settings.farmName
+      : t("defaultFarmTitle");
+  }
+
+  function renderStatus(){
+    var dot = document.getElementById("statusDot");
+    var txt = document.getElementById("statusText");
+    dot.classList.toggle("online", state.online);
+    var label = state.online ? t("online") : t("offline");
+    if(state.pending.length > 0){
+      label += " · " + state.pending.length + " " + t("syncSuffix");
+    }
+    txt.textContent = label;
+  }
+
+  function renderWarning(){
+    var banner = document.getElementById("warningBanner");
+    if(!state.settings.sheetUrl){
+      banner.textContent = t("warnNoUrl");
+      banner.classList.remove("hidden");
+    }else{
+      banner.classList.add("hidden");
+    }
+  }
+
+  function renderSummary(){
+    var totalClients = state.clients.length;
+    var totalHeads = 0, totalDebt = 0;
+    state.clients.forEach(function(c){
+      totalHeads += Number(c.heads) || 0;
+      totalDebt += computeDebt(c).owed;
+    });
+    var el = document.getElementById("summaryCards");
+    el.innerHTML =
+      '<div class="summary-card"><div class="val">' + totalClients + '</div><div class="lbl">' + t("totalClients") + '</div></div>' +
+      '<div class="summary-card"><div class="val">' + totalHeads + '</div><div class="lbl">' + t("totalHeads") + '</div></div>' +
+      '<div class="summary-card"><div class="val">' + formatMoney(totalDebt) + '</div><div class="lbl">' + t("totalDebt") + '</div></div>';
+  }
+
+  function renderClients(){
+    var list = document.getElementById("clientsList");
+    if(state.clients.length === 0){
+      list.innerHTML = '<div class="clients-empty">' + t("noClients") + '</div>';
+      return;
+    }
+    var html = "";
+    state.clients.slice().reverse().forEach(function(client){
+      var d = computeDebt(client);
+      var isPaid = d.owed <= 0;
+      html += '' +
+        '<div class="client-card" data-id="' + client.id + '">' +
+          '<div class="client-top">' +
+            '<div>' +
+              '<div class="client-name">' + escapeHtml(client.name) + '</div>' +
+              '<div class="client-heads">' + client.heads + ' ' + t("headsLabel") + '</div>' +
+            '</div>' +
+            (isPaid ? '<span class="paid-badge">' + t("paidStatus") + '</span>' : '') +
+          '</div>' +
+          '<div class="client-debt ' + (isPaid ? "zero" : "") + '">' + formatMoney(d.owed) + '</div>' +
+          '<div class="client-actions">' +
+            '<button class="primary pay-btn" data-id="' + client.id + '"' + (isPaid ? " disabled" : "") + '>' + t("payInFull") + '</button>' +
+            '<button class="danger-ghost del-btn" data-id="' + client.id + '">' + t("delete") + '</button>' +
+          '</div>' +
+        '</div>';
+    });
+    list.innerHTML = html;
+  }
+
+  function escapeHtml(str){
+    var div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
+
+  function renderAll(){
+    applyStaticTranslations();
+    renderHeader();
+    renderStatus();
+    renderWarning();
+    renderSummary();
+    renderClients();
+  }
+
+  // ---------- sync queue ----------
+
+  function queueAction(action){
+    action.ts = Date.now();
+    state.pending.push(action);
+    savePending();
+    renderStatus();
+    trySync();
+  }
+
+  function trySync(){
+    if(!state.online || !state.settings.sheetUrl || state.pending.length === 0){
+      return;
+    }
+    flushPending();
+  }
+
+  function flushPending(){
+    if(state.pending.length === 0) return;
+    var item = state.pending[0];
+    fetch(state.settings.sheetUrl, {
       method: "POST",
-      mode: "no-cors",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ batch, settings: {
-        farm: state.settings.farm,
-        tariff: state.settings.tariff,
-        currency: state.settings.currency
-      }})
+      body: JSON.stringify(item)
+    }).then(function(res){
+      if(!res || !res.ok){ throw new Error("bad response"); }
+      state.pending.shift();
+      savePending();
+      renderStatus();
+      if(state.pending.length > 0){
+        flushPending();
+      }
+    }).catch(function(){
+      // остаётся в очереди, попробуем позже (событие online или интервал)
     });
-    // no-cors не даёт прочитать ответ, но запрос уходит
-    state.pending = [];
-    saveJSON(STORAGE_KEYS.pending, state.pending);
-    renderSyncStatus();
-  } catch (e) {
-    // оставим в очереди, попробуем позже
-    console.warn("Sync failed, will retry later", e);
   }
-}
 
-/* ============================================================
-   ТОСТ
-   ============================================================ */
-let toastTimer = null;
-function showToast(msg, type) {
-  const el = document.getElementById("toast");
-  el.textContent = msg;
-  el.className = "toast show " + (type || "");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    el.className = "toast " + (type || "");
-  }, 2200);
-}
+  window.addEventListener("online", function(){
+    state.online = true;
+    renderStatus();
+    trySync();
+  });
+  window.addEventListener("offline", function(){
+    state.online = false;
+    renderStatus();
+  });
+  setInterval(function(){ trySync(); }, 30000);
 
-/* ============================================================
-   МОДАЛЬНЫЕ ОКНА
-   ============================================================ */
-function openModal(id) {
-  document.getElementById(id).classList.add("active");
-}
-function closeModal(id) {
-  document.getElementById(id).classList.remove("active");
-}
+  // ---------- добавление одного клиента ----------
 
-function openSettings() {
-  document.getElementById("setLang").value = state.settings.lang || "ru";
-  document.getElementById("setFarm").value = state.settings.farm || "";
-  document.getElementById("setUrl").value = state.settings.url || "";
-  document.getElementById("setTariff").value = state.settings.tariff || "";
-  document.getElementById("setCurrency").value = state.settings.currency || "₸";
-  openModal("settingsModal");
-}
+  function addClient(name, heads){
+    var client = {
+      id: uid(),
+      name: name,
+      heads: heads,
+      paidTotal: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    state.clients.push(client);
+    queueAction({ type: "upsert_client", client: client });
+    return client;
+  }
 
-function saveSettings() {
-  state.settings = {
-    lang: document.getElementById("setLang").value || "ru",
-    farm: document.getElementById("setFarm").value.trim(),
-    url: document.getElementById("setUrl").value.trim(),
-    tariff: Number(document.getElementById("setTariff").value || 0),
-    currency: document.getElementById("setCurrency").value || "₸"
-  };
-  saveJSON(STORAGE_KEYS.settings, state.settings);
-  closeModal("settingsModal");
+  document.getElementById("addClientForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var nameInput = document.getElementById("newClientName");
+    var headsInput = document.getElementById("newClientHeads");
+    var name = nameInput.value.trim();
+    var heads = parseInt(headsInput.value, 10);
+    if(!name || !heads || heads <= 0) return;
+
+    addClient(name, heads);
+    saveClients();
+    renderSummary();
+    renderClients();
+    nameInput.value = "";
+    headsInput.value = "";
+    nameInput.focus();
+  });
+
+  document.getElementById("clientsList").addEventListener("click", function(e){
+    var payBtn = e.target.closest(".pay-btn");
+    var delBtn = e.target.closest(".del-btn");
+
+    if(payBtn && !payBtn.disabled){
+      var id1 = payBtn.getAttribute("data-id");
+      var client = state.clients.find(function(c){ return c.id === id1; });
+      if(!client) return;
+      var d = computeDebt(client);
+      client.paidTotal = (Number(client.paidTotal) || 0) + d.owed;
+      client.updatedAt = Date.now();
+      saveClients();
+      queueAction({ type: "payment", clientId: client.id, amount: d.owed, paidAt: Date.now() });
+      renderSummary();
+      renderClients();
+      return;
+    }
+
+    if(delBtn){
+      var id2 = delBtn.getAttribute("data-id");
+      if(!confirm(t("confirmDelete"))) return;
+      state.clients = state.clients.filter(function(c){ return c.id !== id2; });
+      saveClients();
+      queueAction({ type: "delete_client", clientId: id2 });
+      renderSummary();
+      renderClients();
+      return;
+    }
+  });
+
+  // ---------- настройки ----------
+
+  var settingsModal = document.getElementById("settingsModal");
+  var pendingLangChoice = state.settings.lang;
+
+  function openSettings(){
+    pendingLangChoice = state.settings.lang;
+    document.getElementById("settingFarmName").value = state.settings.farmName || "";
+    document.getElementById("settingSheetUrl").value = state.settings.sheetUrl || "";
+    document.getElementById("settingTariff").value = state.settings.tariff || 0;
+    document.getElementById("settingCurrency").value = state.settings.currency || "";
+    applyStaticTranslations();
+    settingsModal.classList.remove("hidden");
+  }
+
+  function closeSettings(){
+    settingsModal.classList.add("hidden");
+  }
+
+  document.getElementById("gearBtn").addEventListener("click", openSettings);
+  document.getElementById("settingsCancel").addEventListener("click", closeSettings);
+  settingsModal.addEventListener("click", function(e){
+    if(e.target === settingsModal) closeSettings();
+  });
+
+  document.getElementById("langSwitch").addEventListener("click", function(e){
+    var btn = e.target.closest("button[data-lang-opt]");
+    if(!btn) return;
+    pendingLangChoice = btn.getAttribute("data-lang-opt");
+    state.settings.lang = pendingLangChoice;
+    applyStaticTranslations();
+  });
+
+  document.getElementById("settingsSave").addEventListener("click", function(){
+    state.settings.lang = pendingLangChoice;
+    state.settings.farmName = document.getElementById("settingFarmName").value.trim();
+    state.settings.sheetUrl = document.getElementById("settingSheetUrl").value.trim();
+    state.settings.tariff = parseFloat(document.getElementById("settingTariff").value) || 0;
+    state.settings.currency = document.getElementById("settingCurrency").value.trim() || "₸";
+    saveSettings();
+    closeSettings();
+    renderAll();
+    trySync();
+  });
+
+  // ---------- импорт списка ----------
+
+  var importModal = document.getElementById("importModal");
+  var importResultEl = document.getElementById("importResult");
+
+  function openImport(){
+    document.getElementById("importText").value = "";
+    importResultEl.classList.add("hidden");
+    importResultEl.textContent = "";
+    applyStaticTranslations();
+    importModal.classList.remove("hidden");
+  }
+
+  function closeImport(){
+    importModal.classList.add("hidden");
+  }
+
+  document.getElementById("openImportBtn").addEventListener("click", openImport);
+  document.getElementById("importCancel").addEventListener("click", closeImport);
+  importModal.addEventListener("click", function(e){
+    if(e.target === importModal) closeImport();
+  });
+
+  function parseImportLine(line){
+    var parts = line.split(/[,;\t]+/);
+    if(parts.length < 2) return null;
+
+    var headsRaw = parts[parts.length - 1].trim();
+    var heads = parseInt(headsRaw.replace(/[^\d]/g, ""), 10);
+    var name = parts.slice(0, parts.length - 1).join(",").trim();
+
+    if(!name || !heads || heads <= 0) return null;
+    return { name: name, heads: heads };
+  }
+
+  document.getElementById("importConfirm").addEventListener("click", function(){
+    var raw = document.getElementById("importText").value;
+    var lines = raw.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(function(l){ return l.length > 0; });
+
+    var added = 0;
+    var failed = 0;
+
+    lines.forEach(function(line){
+      var parsed = parseImportLine(line);
+      if(parsed){
+        addClient(parsed.name, parsed.heads);
+        added++;
+      } else {
+        failed++;
+      }
+    });
+
+    if(added > 0){
+      saveClients();
+      renderSummary();
+      renderClients();
+    }
+
+    importResultEl.classList.remove("hidden");
+    if(added === 0 && failed === 0){
+      importResultEl.className = "import-result err";
+      importResultEl.textContent = "";
+    } else {
+      var msg = t("importOkPrefix") + " " + added;
+      if(failed > 0){
+        msg += " · " + t("importErrPrefix") + " " + failed;
+        importResultEl.className = "import-result err";
+      } else {
+        importResultEl.className = "import-result ok";
+      }
+      importResultEl.textContent = msg;
+    }
+
+    if(added > 0 && failed === 0){
+      setTimeout(closeImport, 900);
+    }
+  });
+
+  // ---------- инициализация ----------
+
   renderAll();
   trySync();
-  showToast(t("saved"), "success");
-}
 
-function openAdd() {
-  document.getElementById("addName").value = "";
-  document.getElementById("addHeads").value = "";
-  document.getElementById("addNote").value = "";
-  openModal("addModal");
-  setTimeout(() => document.getElementById("addName").focus(), 300);
-}
-
-function saveAdd() {
-  const name = document.getElementById("addName").value.trim();
-  const heads = document.getElementById("addHeads").value.trim();
-  const note = document.getElementById("addNote").value.trim();
-  if (!name) { showToast(t("fillName"), "error"); return; }
-  if (!heads || Number(heads) <= 0) { showToast(t("fillHeads"), "error"); return; }
-  addClient(name, Number(heads), note);
-  closeModal("addModal");
-}
-
-/* ============================================================
-   СОБЫТИЯ
-   ============================================================ */
-document.getElementById("settingsBtn").addEventListener("click", openSettings);
-document.getElementById("settingsSave").addEventListener("click", saveSettings);
-document.getElementById("settingsCancel").addEventListener("click", () => closeModal("settingsModal"));
-
-document.getElementById("addBtn").addEventListener("click", openAdd);
-document.getElementById("addSave").addEventListener("click", saveAdd);
-document.getElementById("addCancel").addEventListener("click", () => closeModal("addModal"));
-
-// Закрытие модалок по клику на оверлей
-document.querySelectorAll(".modal-overlay").forEach(ov => {
-  ov.addEventListener("click", (e) => {
-    if (e.target === ov) ov.classList.remove("active");
-  });
-});
-
-// Онлайн / оффлайн
-window.addEventListener("online", () => {
-  state.isOnline = true;
-  renderSyncStatus();
-  trySync();
-});
-window.addEventListener("offline", () => {
-  state.isOnline = false;
-  renderSyncStatus();
-});
-
-/* ============================================================
-   СТАРТ
-   ============================================================ */
-renderAll();
+})();
 </script>
 </body>
 </html>
